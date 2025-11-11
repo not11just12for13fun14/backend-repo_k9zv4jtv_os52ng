@@ -1,48 +1,45 @@
 """
-Database Schemas
+Database Schemas for A&V TechSolutions – Student Project Portal
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a MongoDB collection. The collection name is the lowercase
+of the class name (e.g., User -> "user").
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Literal, List
+from datetime import datetime
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr = Field(..., description="Email address")
+    role: Literal["student", "admin"] = Field("student", description="User role")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Project(BaseModel):
+    studentId: str = Field(..., description="ID of the student user")
+    title: str = Field(..., description="Project title")
+    description: Optional[str] = Field(None, description="Project description")
+    technology: Literal["Python", "Java", "AI/ML", "IoT", "Web", "Android"]
+    status: Literal["Requested", "In Review", "In Development", "Completed"] = "Requested"
+    paymentStatus: Literal["pending", "verified"] = "pending"
+    paymentProofURL: Optional[str] = Field(None, description="URL to payment proof image")
+    adminRemarks: Optional[str] = Field(None, description="Notes from admin")
+    deliverables: Optional[List[str]] = Field(default_factory=list, description="List of file URLs (code/report/PPT)")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Payment(BaseModel):
+    studentId: str = Field(..., description="Student user id")
+    projectId: Optional[str] = Field(None, description="Related project id")
+    amount: float = Field(..., ge=0)
+    transactionId: Optional[str] = Field(None, description="Manual transaction reference")
+    paymentProofURL: Optional[str] = Field(None, description="URL to payment proof image/screenshot")
+    verified: bool = False
+    verifiedBy: Optional[str] = None
+    verifiedDate: Optional[datetime] = None
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Message(BaseModel):
+    fromUserId: str
+    toUserId: str
+    content: str
+
+# Response helpers (optional wrappers)
+class IdResponse(BaseModel):
+    id: str
